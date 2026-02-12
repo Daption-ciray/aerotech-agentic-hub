@@ -1,15 +1,4 @@
-FROM node:20-slim AS frontend-build
-WORKDIR /frontend
-
-# Frontend bağımlılıkları
-COPY frontend/package.json frontend/package-lock.json* ./
-RUN npm install
-
-# Frontend build
-COPY frontend ./
-RUN npm run build
-
-FROM python:3.11-slim AS backend
+FROM python:3.11-slim
 
 # Çevre değişkenleri
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -31,9 +20,6 @@ RUN pip install --upgrade pip && \
 
 # Proje dosyaları
 COPY . .
-
-# Frontend'in build edilmiş statik dosyalarını backend içine kopyala
-COPY --from=frontend-build /frontend/dist /app/frontend_dist
 
 # Railway kendi PORT değişkenini enjekte eder.
 # Uvicorn bu PORT'u kullanacak, yoksa 8000'e düşer.
