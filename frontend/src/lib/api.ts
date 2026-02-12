@@ -1,4 +1,12 @@
-const API_BASE = import.meta.env.VITE_API_URL || "/api";
+// Railway / prod için backend URL'ini ortam değişkeninden okuyoruz.
+// Desteklenen env değişkenleri:
+// - VITE_API_URL
+// - VITE_API_BASE_URL
+// Hiçbiri yoksa, local geliştirme / reverse proxy senaryosu için "/api".
+const API_BASE =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  "/api";
 
 export async function sendQuestion(question: string): Promise<{ answer: string }> {
   const res = await fetch(`${API_BASE}/qa`, {
