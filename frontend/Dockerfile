@@ -2,13 +2,12 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Railway'de Root Directory = frontend olarak ayarlandığında
-# build context frontend klasörü olur, bu yüzden doğrudan package.json kopyalıyoruz
-COPY package.json package-lock.json* ./
+# Railway root'tan build yapıyor, bu yüzden frontend/ prefix'i ile kopyalıyoruz
+COPY frontend/package.json frontend/package-lock.json* ./
 RUN npm install
 
-# Kaynak kod
-COPY . .
+# Frontend kaynak kodunu kopyala
+COPY frontend/ .
 
 # Build al
 RUN npm run build
