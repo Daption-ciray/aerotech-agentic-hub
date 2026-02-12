@@ -22,9 +22,9 @@ export default function App() {
   const PageComponent = PAGE_MAP[activeTab];
 
   return (
-    <div className="h-screen flex bg-slate-950">
+    <div className="h-screen flex bg-white">
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
-      <main className="flex-1 flex min-w-0 border-r border-slate-800">
+      <main className="flex-1 flex min-w-0 border-r border-slate-200 bg-slate-50">
         <PageComponent />
         <Dashboard onNavigateToResources={() => setActiveTab("resources")} />
       </main>

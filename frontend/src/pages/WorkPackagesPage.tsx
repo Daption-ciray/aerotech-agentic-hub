@@ -7,8 +7,8 @@ import { notifyDataUpdated } from "@/lib/events";
 
 function StatusBadge({ status }: { status: "approved" | "pending" | "in_progress" }) {
   const config = {
-    approved: { icon: CheckCircle, label: "Onaylı", class: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
-    pending: { icon: Clock, label: "Beklemede", class: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
+    approved: { icon: CheckCircle, label: "Onaylı", class: "bg-emerald-500/20 text-emerald-700 border-emerald-500/30" },
+    pending: { icon: Clock, label: "Beklemede", class: "bg-amber-500/20 text-amber-700 border-amber-500/30" },
     in_progress: { icon: AlertTriangle, label: "Devam Ediyor", class: "bg-thy-red/20 text-thy-red border-thy-red/30" },
   };
   const { icon: Icon, label, class: cls } = config[status];
@@ -74,7 +74,7 @@ export function WorkPackagesPage() {
 
   if (error) {
     return (
-      <div className="flex-1 flex items-center justify-center text-amber-400">
+      <div className="flex-1 flex items-center justify-center text-amber-600">
         {error} — Backend çalışıyor mu?
       </div>
     );
@@ -82,9 +82,9 @@ export function WorkPackagesPage() {
 
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-200 flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-zinc-100">İş Paketleri</h2>
+          <h2 className="text-lg font-semibold text-zinc-800">İş Paketleri</h2>
           <p className="text-sm text-zinc-500 mt-0.5">Hazırlanan ve kontrol edilen görev listeleri (CRUD)</p>
         </div>
         <button
@@ -95,11 +95,11 @@ export function WorkPackagesPage() {
         </button>
       </div>
       <div className="flex-1 overflow-y-auto scrollbar-thin p-6">
-        <div className="rounded-lg border border-slate-700 bg-slate-900/50 overflow-hidden">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-slate-700 bg-slate-800/50">
+                <tr className="border-b border-slate-200 bg-slate-100">
                   <th className="text-left px-4 py-3 text-xs font-mono text-zinc-500 uppercase">ID</th>
                   <th className="text-left px-4 py-3 text-xs font-mono text-zinc-500 uppercase">Görev</th>
                   <th className="text-left px-4 py-3 text-xs font-mono text-zinc-500 uppercase">Uçak</th>
@@ -112,19 +112,19 @@ export function WorkPackagesPage() {
               </thead>
               <tbody>
                 {packages.map((wp) => (
-                  <tr key={String(wp.id)} className="border-b border-slate-800 hover:bg-slate-800/30 transition-colors">
-                    <td className="px-4 py-3 font-mono text-zinc-400">{String(wp.id)}</td>
-                    <td className="px-4 py-3 text-zinc-100">{String(wp.title)}</td>
-                    <td className="px-4 py-3 font-mono text-zinc-400">{String(wp.aircraft ?? "")}</td>
-                    <td className="px-4 py-3 font-mono text-zinc-400">{String(wp.ata ?? "")}</td>
-                    <td className="px-4 py-3 text-zinc-400">{wp.assigned_to ? String(wp.assigned_to) : "—"}</td>
-                    <td className="px-4 py-3 font-mono text-zinc-400">{String(wp.due_date ?? "")}</td>
+                  <tr key={String(wp.id)} className="border-b border-slate-200 hover:bg-slate-100 transition-colors">
+                    <td className="px-4 py-3 font-mono text-zinc-500">{String(wp.id)}</td>
+                    <td className="px-4 py-3 text-zinc-800">{String(wp.title)}</td>
+                    <td className="px-4 py-3 font-mono text-zinc-500">{String(wp.aircraft ?? "")}</td>
+                    <td className="px-4 py-3 font-mono text-zinc-500">{String(wp.ata ?? "")}</td>
+                    <td className="px-4 py-3 text-zinc-600">{wp.assigned_to ? String(wp.assigned_to) : "—"}</td>
+                    <td className="px-4 py-3 font-mono text-zinc-500">{String(wp.due_date ?? "")}</td>
                     <td className="px-4 py-3">
                       <StatusBadge status={(wp.status as "approved" | "pending" | "in_progress") ?? "pending"} />
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
-                        <button onClick={() => { setEditing(wp); setModalOpen(true); }} className="p-1 rounded text-zinc-400 hover:bg-slate-700 hover:text-zinc-100">
+                        <button onClick={() => { setEditing(wp); setModalOpen(true); }} className="p-1 rounded text-zinc-500 hover:bg-slate-100 hover:text-zinc-800">
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button onClick={() => handleDelete(String(wp.id))} className="p-1 rounded text-thy-red hover:bg-thy-red/20">
@@ -206,25 +206,25 @@ function WorkPackageModal({
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
           <label className="block text-xs text-zinc-500 mb-1">ID</label>
-          <input value={id} onChange={(e) => setId(e.target.value)} disabled={!!editing} className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-zinc-100" placeholder="WP-147" />
+          <input value={id} onChange={(e) => setId(e.target.value)} disabled={!!editing} className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm text-zinc-800" placeholder="WP-147" />
         </div>
         <div>
           <label className="block text-xs text-zinc-500 mb-1">Görev Başlığı</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-zinc-100" />
+          <input value={title} onChange={(e) => setTitle(e.target.value)} required className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm text-zinc-800" />
         </div>
         <div className="flex gap-2">
           <div>
             <label className="block text-xs text-zinc-500 mb-1">Uçak</label>
-            <input value={aircraft} onChange={(e) => setAircraft(e.target.value)} className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-zinc-100" />
+            <input value={aircraft} onChange={(e) => setAircraft(e.target.value)} className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm text-zinc-800" />
           </div>
           <div>
             <label className="block text-xs text-zinc-500 mb-1">ATA</label>
-            <input value={ata} onChange={(e) => setAta(e.target.value)} className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-zinc-100" />
+            <input value={ata} onChange={(e) => setAta(e.target.value)} className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm text-zinc-800" />
           </div>
         </div>
         <div>
           <label className="block text-xs text-zinc-500 mb-1">Durum</label>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-zinc-100">
+          <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm text-zinc-800">
             <option value="pending">Beklemede</option>
             <option value="in_progress">Devam Ediyor</option>
             <option value="approved">Onaylı</option>
@@ -235,7 +235,7 @@ function WorkPackageModal({
           <select
             value={assigned_to}
             onChange={(e) => setAssignedTo(e.target.value)}
-            className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-zinc-100"
+            className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm text-zinc-800"
           >
             <option value="">— Seçin veya boş bırakın —</option>
             {personnel.map((p) => (
@@ -245,13 +245,13 @@ function WorkPackageModal({
         </div>
         <div>
           <label className="block text-xs text-zinc-500 mb-1">Termin Tarihi</label>
-          <input value={due_date} onChange={(e) => setDueDate(e.target.value)} type="date" className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-zinc-100" />
+          <input value={due_date} onChange={(e) => setDueDate(e.target.value)} type="date" className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm text-zinc-800" />
         </div>
         <div className="flex gap-2 pt-2">
           <button type="submit" disabled={saving} className="flex-1 rounded bg-thy-red px-4 py-2 text-sm font-medium text-white hover:bg-thy-red-hover disabled:opacity-50">
             {saving ? "..." : "Kaydet"}
           </button>
-          <button type="button" onClick={onClose} className="rounded border border-slate-600 px-4 py-2 text-sm text-zinc-300 hover:bg-slate-800">
+          <button type="button" onClick={onClose} className="rounded border border-slate-200 px-4 py-2 text-sm text-zinc-600 hover:bg-slate-100">
             İptal
           </button>
         </div>

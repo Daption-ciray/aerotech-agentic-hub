@@ -66,7 +66,7 @@ export function EfficiencyAnalysisPage() {
 
   if (error) {
     return (
-      <div className="flex-1 flex items-center justify-center text-amber-400">
+      <div className="flex-1 flex items-center justify-center text-amber-600">
         {error} — Backend çalışıyor mu?
       </div>
     );
@@ -79,8 +79,8 @@ export function EfficiencyAnalysisPage() {
 
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-800">
-        <h2 className="text-lg font-semibold text-zinc-100">Verimlilik Analizi</h2>
+      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-200">
+        <h2 className="text-lg font-semibold text-zinc-800">Verimlilik Analizi</h2>
         <p className="text-sm text-zinc-500 mt-0.5">Bakım sonrası süreç iyileştirme metrikleri</p>
       </div>
       <div className="flex-1 overflow-y-auto scrollbar-thin p-6 space-y-6">
@@ -92,14 +92,14 @@ export function EfficiencyAnalysisPage() {
             return (
               <div
                 key={key}
-                className="rounded-lg border border-slate-700 bg-slate-900/50 p-4"
+                className="rounded-lg border border-slate-200 bg-slate-50 p-4"
               >
                 <div className="flex items-center gap-2 mb-2">
                   <Target className="w-4 h-4 text-thy-red" />
                   <span className="text-xs text-zinc-500">{METRIC_LABELS[key]}</span>
                 </div>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-zinc-100 font-mono">
+                  <span className="text-2xl font-bold text-zinc-800 font-mono">
                     {value}
                   </span>
                   <span className="text-sm text-zinc-500">{unit}</span>
@@ -110,10 +110,10 @@ export function EfficiencyAnalysisPage() {
           })}
         </div>
 
-        <div className="rounded-lg border border-slate-700 bg-slate-900/50 overflow-hidden">
-          <div className="px-4 py-3 border-b border-slate-700 flex items-center gap-2">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 overflow-hidden">
+          <div className="px-4 py-3 border-b border-slate-200 flex items-center gap-2">
             <BarChart3 className="w-4 h-4 text-thy-red" />
-            <h3 className="text-sm font-semibold text-zinc-100">Aylık Tamamlanan vs Planlanan İş Paketleri</h3>
+            <h3 className="text-sm font-semibold text-zinc-800">Aylık Tamamlanan vs Planlanan İş Paketleri</h3>
           </div>
           <div className="p-6">
             <div className="flex items-end gap-4 h-48">
@@ -146,15 +146,15 @@ export function EfficiencyAnalysisPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-4">
+        <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
           <div className="flex items-center gap-2 mb-3">
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
-            <h3 className="text-sm font-semibold text-zinc-100">Önerilen İyileştirmeler</h3>
+            <TrendingUp className="w-4 h-4 text-emerald-600" />
+            <h3 className="text-sm font-semibold text-zinc-800">Önerilen İyileştirmeler</h3>
           </div>
           {analytics?.summary && (
-            <p className="text-sm text-zinc-300 mb-3">{analytics.summary}</p>
+            <p className="text-sm text-zinc-600 mb-3">{analytics.summary}</p>
           )}
-          <ul className="space-y-2 text-sm text-zinc-400">
+          <ul className="space-y-2 text-sm text-zinc-600">
             {(analytics?.suggestions && analytics.suggestions.length > 0
               ? analytics.suggestions
               : [
@@ -163,7 +163,7 @@ export function EfficiencyAnalysisPage() {
                 ]
             ).map((text, i) => (
               <li key={i} className="flex items-start gap-2">
-                <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                 <span>{text}</span>
               </li>
             ))}

@@ -4,7 +4,6 @@ import {
   Wrench,
   ClipboardList,
   BarChart3,
-  Plane,
   LayoutList,
 } from "lucide-react";
 
@@ -45,15 +44,17 @@ interface SidebarProps {
 
 export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   return (
-    <aside className="w-64 flex-shrink-0 border-r border-slate-800 bg-slate-925 flex flex-col">
+    <aside className="w-64 flex-shrink-0 border-r border-slate-200 bg-white flex flex-col">
       {/* Logo & Brand */}
-      <div className="p-4 border-b border-slate-800">
+      <div className="p-4 border-b border-slate-200">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-thy-red flex items-center justify-center">
-            <Plane className="w-5 h-5 text-white" />
-          </div>
+          <img
+            src="/turkish-technic-logo.png"
+            alt="Turkish Technic"
+            className="w-16 h-16 object-contain flex-shrink-0"
+          />
           <div>
-            <h1 className="font-semibold text-zinc-100 text-sm tracking-tight">
+            <h1 className="font-semibold text-zinc-800 text-sm tracking-tight">
               AeroTech
             </h1>
             <p className="text-xs text-zinc-500 font-mono">Intelligence</p>
@@ -76,8 +77,8 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left text-sm font-medium transition-all duration-150",
                 isActive
-                  ? "bg-thy-red-muted text-thy-red border border-thy-red/30"
-                  : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900/50"
+                  ? "bg-thy-red-muted text-thy-red border border-thy-red/40"
+                  : "text-zinc-600 hover:text-zinc-900 hover:bg-slate-100"
               )}
             >
               <Icon
@@ -93,7 +94,7 @@ export function Sidebar({ activeTab, onTabChange }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div className="p-3 border-t border-slate-800">
+      <div className="p-3 border-t border-slate-200">
         <p className="text-[10px] text-zinc-600 font-mono">
           Abdullah Gökalp Çıray
         </p>

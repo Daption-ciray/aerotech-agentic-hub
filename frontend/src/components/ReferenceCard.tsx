@@ -12,20 +12,20 @@ const TYPE_CONFIG = {
   AMM: {
     icon: BookOpen,
     label: "AMM",
-    bg: "bg-slate-800/80 border-slate-700",
-    accent: "text-emerald-400",
+    bg: "bg-slate-100 border-slate-200",
+    accent: "text-emerald-600",
   },
   EASA: {
     icon: Shield,
     label: "EASA",
-    bg: "bg-slate-800/80 border-slate-700",
-    accent: "text-amber-400",
+    bg: "bg-slate-100 border-slate-200",
+    accent: "text-amber-600",
   },
   FAA: {
     icon: Shield,
     label: "FAA",
-    bg: "bg-slate-800/80 border-slate-700",
-    accent: "text-amber-400",
+    bg: "bg-slate-100 border-slate-200",
+    accent: "text-amber-600",
   },
 };
 
@@ -52,7 +52,7 @@ export function ReferenceCard({
           {config.label}
         </span>
       </div>
-      <p className="text-zinc-300 font-sans">{title}</p>
+      <p className="text-zinc-700 font-sans">{title}</p>
       <p className="text-zinc-500 mt-1 truncate">{reference}</p>
     </div>
   );

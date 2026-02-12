@@ -118,12 +118,12 @@ export function SprintPlanningPage() {
 
   return (
     <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-800">
+      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-200">
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
               <LayoutList className="w-5 h-5 text-thy-red" />
-              <h2 className="text-lg font-semibold text-zinc-100">Sprint Planlama</h2>
+              <h2 className="text-lg font-semibold text-zinc-800">Sprint Planlama</h2>
             </div>
             <p className="text-sm text-zinc-500 mt-0.5">
               Jira/Trello tarzı Kanban – kartları sürükleyerek veya Önceki/Sonraki ile durum güncelleyin
@@ -132,7 +132,7 @@ export function SprintPlanningPage() {
           <div className="flex items-center gap-2">
             {sprintState?.status === "active" && (
               <div className="flex flex-col items-end gap-0.5">
-                <span className="text-xs text-emerald-400 font-medium px-2 py-1 rounded bg-emerald-500/20">
+                <span className="text-xs text-emerald-700 font-medium px-2 py-1 rounded bg-emerald-500/20">
                   {sprintState.name} · {sprintState.days_remaining ?? 0} gün kaldı
                 </span>
                 {sprintState.goal && (
@@ -200,12 +200,12 @@ export function SprintPlanningPage() {
                   "w-72 flex-shrink-0 flex flex-col rounded-lg border-2 transition-colors",
                   isDropTarget
                     ? "border-thy-red bg-thy-red/10"
-                    : "border-slate-700 bg-slate-900/30"
+                    : "border-slate-200 bg-slate-50"
                 )}
               >
-                <div className="px-4 py-3 border-b border-slate-700 flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-zinc-100">{col.label}</h3>
-                  <span className="text-xs font-mono text-zinc-500 bg-slate-800 px-2 py-0.5 rounded">
+                <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-zinc-800">{col.label}</h3>
+                  <span className="text-xs font-mono text-zinc-500 bg-slate-100 px-2 py-0.5 rounded">
                     {items.length}
                   </span>
                 </div>
@@ -263,7 +263,7 @@ function SprintStartModal({
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-zinc-100"
+            className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm text-zinc-800"
             placeholder="Bakım Sprint 26-02"
             required
           />
@@ -275,7 +275,7 @@ function SprintStartModal({
           <textarea
             value={goal}
             onChange={(e) => setGoal(e.target.value)}
-            className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-zinc-100 min-h-[60px]"
+            className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm text-zinc-800 min-h-[60px]"
             placeholder="Örn: A320 uçak filosu için kritik bakım işlerinin tamamlanması"
             rows={2}
           />
@@ -287,7 +287,7 @@ function SprintStartModal({
               type="date"
               value={start_date}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-zinc-100"
+              className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm text-zinc-800"
               required
             />
           </div>
@@ -297,7 +297,7 @@ function SprintStartModal({
               type="date"
               value={end_date}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-zinc-100"
+              className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm text-zinc-800"
               required
             />
           </div>
@@ -313,7 +313,7 @@ function SprintStartModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded border border-slate-600 px-4 py-2 text-sm text-zinc-300 hover:bg-slate-800"
+            className="rounded border border-slate-200 px-4 py-2 text-sm text-zinc-600 hover:bg-slate-100"
           >
             İptal
           </button>
@@ -347,12 +347,12 @@ function Card({
       draggable
       onDragStart={onDragStart}
       className={cn(
-        "rounded-lg border border-slate-700 bg-slate-800/80 p-3 cursor-grab active:cursor-grabbing transition-all",
+        "rounded-lg border border-slate-200 bg-white p-3 cursor-grab active:cursor-grabbing transition-all shadow-sm",
         isDragging && "opacity-50 scale-95",
         updating && "opacity-60 pointer-events-none"
       )}
     >
-      <p className="text-sm font-medium text-zinc-100 line-clamp-2">{item.title}</p>
+      <p className="text-sm font-medium text-zinc-800 line-clamp-2">{item.title}</p>
       <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
         <span className="font-mono">{item.id}</span>
         {item.assigned_to && (
@@ -370,7 +370,7 @@ function Card({
         {canMoveLeft && (
           <button
             onClick={(e) => { e.stopPropagation(); onMoveTo(columns[currentIdx - 1].id); }}
-            className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] text-zinc-400 hover:bg-slate-700 hover:text-zinc-100"
+            className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] text-zinc-500 hover:bg-slate-100 hover:text-zinc-800"
             title={columns[currentIdx - 1].label}
           >
             <ArrowRight className="w-3 h-3 rotate-180" /> Önceki
@@ -379,7 +379,7 @@ function Card({
         {canMoveRight && (
           <button
             onClick={(e) => { e.stopPropagation(); onMoveTo(columns[currentIdx + 1].id); }}
-            className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] text-zinc-400 hover:bg-slate-700 hover:text-zinc-100"
+            className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] text-zinc-500 hover:bg-slate-100 hover:text-zinc-800"
             title={columns[currentIdx + 1].label}
           >
             Sonraki <ArrowRight className="w-3 h-3" />

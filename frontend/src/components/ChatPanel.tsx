@@ -98,8 +98,8 @@ export function ChatPanel() {
   return (
     <div className="flex flex-col flex-1 min-w-0">
       {/* Chat Header */}
-      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-800">
-        <h2 className="text-lg font-semibold text-zinc-100">
+      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-200">
+        <h2 className="text-lg font-semibold text-zinc-800">
           Akıllı Sohbet Paneli
         </h2>
         <p className="text-sm text-zinc-500 mt-0.5">
@@ -129,8 +129,8 @@ export function ChatPanel() {
               className={cn(
                 "max-w-[80%] rounded-lg px-4 py-3",
                 msg.role === "user"
-                  ? "bg-thy-red/15 border border-thy-red/30 text-zinc-100"
-                  : "bg-slate-875 border border-slate-700 text-zinc-200"
+                  ? "bg-thy-red/15 border border-thy-red/30 text-zinc-800"
+                  : "bg-slate-100 border border-slate-200 text-zinc-800"
               )}
             >
               <p className="text-sm leading-relaxed whitespace-pre-wrap">
@@ -150,8 +150,8 @@ export function ChatPanel() {
               )}
             </div>
             {msg.role === "user" && (
-              <div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center flex-shrink-0">
-                <User className="w-4 h-4 text-zinc-400" />
+              <div className="w-8 h-8 rounded-lg bg-slate-200 flex items-center justify-center flex-shrink-0">
+                <User className="w-4 h-4 text-zinc-600" />
               </div>
             )}
           </div>
@@ -161,7 +161,7 @@ export function ChatPanel() {
             <div className="w-8 h-8 rounded-lg bg-thy-red/20 flex items-center justify-center flex-shrink-0">
               <Bot className="w-4 h-4 text-thy-red" />
             </div>
-            <div className="rounded-lg px-4 py-3 bg-slate-875 border border-slate-700">
+            <div className="rounded-lg px-4 py-3 bg-slate-100 border border-slate-200">
               <Loader2 className="w-5 h-5 animate-spin text-thy-red" />
             </div>
           </div>
@@ -171,7 +171,7 @@ export function ChatPanel() {
       {/* Input */}
       <form
         onSubmit={handleSubmit}
-        className="flex-shrink-0 p-4 border-t border-slate-800"
+        className="flex-shrink-0 p-4 border-t border-slate-200"
       >
         <div className="flex gap-2">
           <input
@@ -179,7 +179,7 @@ export function ChatPanel() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Aileron/Elevator nedir? veya teknik bir soru sorun..."
-            className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-thy-red/50 focus:border-thy-red/50 font-sans"
+            className="flex-1 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-zinc-800 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-thy-red/50 focus:border-thy-red/50 font-sans"
             disabled={loading}
           />
           <button
