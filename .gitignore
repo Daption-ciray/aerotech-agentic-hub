@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+.venv/
+venv/
+.env.*
+
+# VSCode / IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Vector store / cache
+vectorstore/
+
+# SQLite DB (runtime data)
+aerotech.db
+
+# Cursor / editor metadata
+.cursor/
+
+# Large data files
+app/data/*.pdf
