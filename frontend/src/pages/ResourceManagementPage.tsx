@@ -166,6 +166,16 @@ export function ResourceManagementPage() {
             tools={tools}
             onEdit={(t) => { setEditing(t); setModal("tool"); }}
             onDelete={handleDeleteTool}
+            onToggleStatus={async (t) => {
+              const next = t.status === "in_use" ? "available" : "in_use";
+              try {
+                await updateTool(String(t.id), { status: next });
+                await refresh();
+                notifyDataUpdated();
+              } catch {
+                alert("Durum güncellenemedi");
+              }
+            }}
           />
         </SectionCard>
 
@@ -263,34 +273,54 @@ function ToolsSection({
   tools,
   onEdit,
   onDelete,
+  onToggleStatus,
 }: {
   tools: Record<string, unknown>[];
   onEdit: (t: Record<string, unknown>) => void;
   onDelete: (id: string) => void;
+  onToggleStatus?: (t: Record<string, unknown>) => void;
 }) {
   return (
     <div className="space-y-3">
-      {tools.map((t) => (
-        <div
-          key={String(t.id)}
-          className="flex items-center justify-between py-2 border-b border-slate-800 last:border-0"
-        >
-          <div>
-            <p className="text-sm font-medium text-zinc-100">{String(t.name ?? "")}</p>
-            <p className="text-xs text-zinc-500 flex items-center gap-1 mt-0.5">
-              <MapPin className="w-3 h-3" /> {String(t.location)}
-            </p>
-            <p className="text-xs text-zinc-600 flex items-center gap-1 mt-0.5">
-              <Calendar className="w-3 h-3" /> Kalibrasyon: {String(t.calibration_due)}
-            </p>
+      {tools.map((t) => {
+        const inUse = t.status === "in_use";
+        return (
+          <div
+            key={String(t.id)}
+            className="flex items-center justify-between py-2 border-b border-slate-800 last:border-0"
+          >
+            <div>
+              <p className="text-sm font-medium text-zinc-100">{String(t.name ?? "")}</p>
+              <p className="text-xs text-zinc-500 flex items-center gap-1 mt-0.5">
+                <MapPin className="w-3 h-3" /> {String(t.location)}
+              </p>
+              <p className="text-xs text-zinc-600 flex items-center gap-1 mt-0.5">
+                <Calendar className="w-3 h-3" /> Kalibrasyon: {String(t.calibration_due)}
+              </p>
+            </div>
+            <div className="flex items-center gap-1">
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={() => onToggleStatus?.(t)}
+                onKeyDown={(e) => e.key === "Enter" && onToggleStatus?.(t)}
+                className={cn(
+                  "px-2 py-0.5 rounded text-xs font-medium cursor-pointer select-none mr-2",
+                  inUse
+                    ? "bg-thy-red/20 text-thy-red hover:bg-thy-red/30"
+                    : "bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30"
+                )}
+                title={inUse ? "Kullanımda – tıkla: Müsait yap" : "Müsait – tıkla: Kullanımda yap"}
+              >
+                {inUse ? "Kullanımda" : "Müsait"}
+              </span>
+              <span className="text-xs font-mono text-zinc-500 px-2 py-0.5 rounded bg-slate-800 mr-2">{String(t.category ?? "")}</span>
+              <ActionBtn icon={Pencil} onClick={() => onEdit(t)} />
+              <ActionBtn icon={Trash2} onClick={() => onDelete(String(t.id))} danger />
+            </div>
           </div>
-          <div className="flex items-center gap-1">
-            <span className="text-xs font-mono text-zinc-500 px-2 py-0.5 rounded bg-slate-800 mr-2">{String(t.category ?? "")}</span>
-            <ActionBtn icon={Pencil} onClick={() => onEdit(t)} />
-            <ActionBtn icon={Trash2} onClick={() => onDelete(String(t.id))} danger />
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -444,13 +474,14 @@ function ToolModal({
   const [category, setCategory] = useState(editing ? String(editing.category) : "general");
   const [location, setLocation] = useState(editing ? String(editing.location) : "");
   const [calibration_due, setCalibrationDue] = useState(editing ? String(editing.calibration_due) : "2026-12-31");
+  const [status, setStatus] = useState(editing ? String(editing.status ?? "available") : "available");
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     try {
-      const data = { id: id || `T${Date.now().toString(36).slice(-4)}`, name, category, location, calibration_due };
+      const data = { id: id || `T${Date.now().toString(36).slice(-4)}`, name, category, location, calibration_due, status };
       if (editing) await updateTool(String(editing.id), data);
       else await createTool(data);
       onSave();
@@ -483,6 +514,13 @@ function ToolModal({
         <div>
           <label className="block text-xs text-zinc-500 mb-1">Kalibrasyon Tarihi</label>
           <input value={calibration_due} onChange={(e) => setCalibrationDue(e.target.value)} className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-zinc-100" />
+        </div>
+        <div>
+          <label className="block text-xs text-zinc-500 mb-1">Kullanım Durumu</label>
+          <select value={status} onChange={(e) => setStatus(e.target.value)} className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-zinc-100">
+            <option value="available">Müsait</option>
+            <option value="in_use">Kullanımda</option>
+          </select>
         </div>
         <div className="flex gap-2 pt-2">
           <button type="submit" disabled={saving} className="flex-1 rounded bg-thy-red px-4 py-2 text-sm font-medium text-white hover:bg-thy-red-hover disabled:opacity-50">

@@ -48,7 +48,8 @@ def init_db() -> None:
                 name TEXT NOT NULL,
                 category TEXT NOT NULL,
                 location TEXT NOT NULL,
-                calibration_due TEXT NOT NULL
+                calibration_due TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'available'
             );
 
             CREATE TABLE IF NOT EXISTS parts (
@@ -89,13 +90,18 @@ def seed_from_json() -> None:
                         (p["id"], p["name"], p["role"], json.dumps(p["ratings"]), json.dumps(p["specializations"]), p["shift"], p["availability"]),
                     )
 
+        try:
+            conn.execute("ALTER TABLE tools ADD COLUMN status TEXT NOT NULL DEFAULT 'available'")
+        except Exception:
+            pass
         if conn.execute("SELECT COUNT(*) FROM tools").fetchone()[0] == 0:
             path = data_dir / "tools.json"
             if path.exists():
                 for t in json.loads(path.read_text(encoding="utf-8")):
+                    status = t.get("status", "available")
                     conn.execute(
-                        "INSERT OR REPLACE INTO tools (id, name, category, location, calibration_due) VALUES (?, ?, ?, ?, ?)",
-                        (t["id"], t["name"], t["category"], t["location"], t["calibration_due"]),
+                        "INSERT OR REPLACE INTO tools (id, name, category, location, calibration_due, status) VALUES (?, ?, ?, ?, ?, ?)",
+                        (t["id"], t["name"], t["category"], t["location"], t["calibration_due"], status),
                     )
 
         if conn.execute("SELECT COUNT(*) FROM parts").fetchone()[0] == 0:

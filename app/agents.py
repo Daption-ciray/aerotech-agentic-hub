@@ -836,6 +836,11 @@ class EfficiencyAgent:
             ]
 
         import json as _json
+        system_prompt = (
+            "Sen uçak bakım operasyonlarında verimlilik odaklı bir YBS uzmanısın. "
+            "Aşağıdaki sayısal metrikler ve örnek iş paketleri üzerinden, "
+            "yönetim için kısa bir özet ve iyileştirme önerileri üret."
+        )
         user_prompt = (
             "METRİKLER:\n"
             f"{_json.dumps(metrics, ensure_ascii=False, indent=2)}\n\n"

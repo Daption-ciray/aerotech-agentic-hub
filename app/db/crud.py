@@ -108,10 +108,11 @@ def get_tool(id: str) -> dict[str, Any] | None:
 
 
 def create_tool(data: dict[str, Any]) -> dict[str, Any]:
+    status = data.get("status", "available")
     with get_connection() as conn:
         conn.execute(
-            "INSERT INTO tools (id, name, category, location, calibration_due) VALUES (?, ?, ?, ?, ?)",
-            (data["id"], data["name"], data["category"], data["location"], data["calibration_due"]),
+            "INSERT INTO tools (id, name, category, location, calibration_due, status) VALUES (?, ?, ?, ?, ?, ?)",
+            (data["id"], data["name"], data["category"], data["location"], data["calibration_due"], status),
         )
     return get_tool(data["id"]) or data
 
@@ -123,9 +124,10 @@ def update_tool(id: str, data: dict[str, Any]) -> dict[str, Any] | None:
                 name = COALESCE(?, name),
                 category = COALESCE(?, category),
                 location = COALESCE(?, location),
-                calibration_due = COALESCE(?, calibration_due)
+                calibration_due = COALESCE(?, calibration_due),
+                status = COALESCE(?, status)
             WHERE id = ?""",
-            (data.get("name"), data.get("category"), data.get("location"), data.get("calibration_due"), id),
+            (data.get("name"), data.get("category"), data.get("location"), data.get("calibration_due"), data.get("status"), id),
         )
     return get_tool(id)
 

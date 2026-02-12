@@ -9,6 +9,7 @@ from datetime import datetime
 from app.db import crud
 from app.db.database import init_db, seed_from_json
 from app.analytics import compute_efficiency_summary, list_completed
+from app.services.sprint_state import get_sprint_state
 
 
 def ensure_db() -> None:
@@ -50,6 +51,25 @@ def get_efficiency_metrics() -> dict[str, Any]:
     first_pass_rate = summary.get("first_pass_rate")  # 0-1 arası oran
     throughput_per_day = summary.get("throughput_per_day")
 
+    # Kaynak kullanımını, mevcut dashboard kartındaki üç metriğin ortalaması
+    # üzerinden türetiyoruz: teknisyen, ekipman, parça stok yeterliliği.
+    personnel = crud.list_personnel()
+    tools = crud.list_tools()
+    parts = crud.list_parts()
+
+    available_personnel = sum(1 for p in personnel if p.get("availability") == "available")
+    personnel_util = round((available_personnel / len(personnel) * 100) if personnel else 0)
+
+    tools_count = len(tools)
+    equipment_util = min(78, 50 + tools_count * 3) if tools_count else 65
+
+    parts_with_stock = sum(1 for p in parts if (p.get("stock_level") or 0) > 0)
+    stock_adequacy = round((parts_with_stock / len(parts) * 100) if parts else 0)
+
+    resource_utilization = round(
+        (personnel_util + equipment_util + stock_adequacy) / 3
+    ) if (personnel or tools or parts) else None
+
     tasks_per_hour = None
     if throughput_per_day is not None:
         # Varsayım: 1 iş günü ≈ 8 saat
@@ -62,9 +82,7 @@ def get_efficiency_metrics() -> dict[str, Any]:
         "avg_completion_days": _round_or_none(avg_days, 1),
         "first_pass_success_rate": _round_or_none((first_pass_rate or 0) * 100, 0) if first_pass_rate is not None else None,
         "tasks_per_hour": _round_or_none(tasks_per_hour, 2),
-        # Kaynak kullanımı kartı için şimdilik mevcut dashboard metriğini koruyoruz;
-        # istenirse ileride personel/tool/part verilerinden yeniden türetilebilir.
-        "resource_utilization": 78,
+        "resource_utilization": resource_utilization,
         # Hedefler şimdilik statik hedefler – yönetim tarafından belirlenen SLA'lar gibi düşünülebilir.
         "target_avg_completion_days": 4.0,
         "target_first_pass": 95,
@@ -159,7 +177,8 @@ def get_scrum_dashboard() -> dict[str, Any]:
     available_personnel = sum(1 for p in personnel if p.get("availability") == "available")
     personnel_util = round((available_personnel / len(personnel) * 100) if personnel else 0)
     tools_count = len(tools)
-    equipment_util = min(78, 50 + tools_count * 3) if tools_count else 65
+    in_use = sum(1 for t in tools if t.get("status") == "in_use")
+    equipment_util = round((in_use / tools_count) * 100) if tools_count else 0
     parts_with_stock = sum(1 for p in parts if (p.get("stock_level") or 0) > 0)
     stock_adequacy = round((parts_with_stock / len(parts) * 100) if parts else 0)
 
@@ -175,15 +194,35 @@ def get_scrum_dashboard() -> dict[str, Any]:
         for p in reversed(last_packages)
     ]
 
+    sprint_state = get_sprint_state()
+    days_remaining = 0
+    if sprint_state.get("status") == "active" and sprint_state.get("end_date"):
+        try:
+            end_dt = datetime.fromisoformat(sprint_state["end_date"].replace("Z", "+00:00")[:19])
+            delta = end_dt - datetime.now()
+            days_remaining = max(0, delta.days)
+        except Exception:
+            days_remaining = sprint_state.get("duration_days", 14)
+
+    sprint_name = sprint_state.get("name") or "Bakım Sprint 24-08"
+    sprint_goal = sprint_state.get("goal") or ""
+    sprint_status = "In Progress" if sprint_state.get("status") == "active" else (
+        "Completed" if sprint_state.get("status") == "completed" else status
+    )
+    if sprint_state.get("status") == "none":
+        sprint_status = "Planlanmadı"
+
     return {
         "sprint": {
-            "name": "Bakım Sprint 24-08",
-            "status": status,
-            "days_remaining": max(0, 5 - (completed // 3)),
+            "name": sprint_name,
+            "goal": sprint_goal,
+            "status": sprint_status,
+            "days_remaining": days_remaining,
             "completed": completed,
             "total": total,
             "velocity": velocity,
             "target": target,
+            "sprint_state": sprint_state.get("status", "none"),
         },
         "resource_util": resource_util,
         "recent_items": recent,

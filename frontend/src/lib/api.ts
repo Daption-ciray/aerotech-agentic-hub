@@ -88,6 +88,54 @@ export async function fetchScrumDashboard() {
   return res.json();
 }
 
+// Sprint yaşam döngüsü (başlat / bitir)
+export async function fetchSprintState(): Promise<{
+  status: string;
+  name?: string | null;
+  goal?: string | null;
+  started_at?: string | null;
+  ended_at?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  days_remaining?: number;
+  duration_days?: number;
+}> {
+  const res = await fetch(`${API_BASE}/sprint/state`);
+  if (!res.ok) throw new Error("Sprint state fetch failed");
+  return res.json();
+}
+
+export async function startSprint(data: {
+  name?: string | null;
+  goal?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  duration_days?: number;
+}) {
+  const res = await fetch(`${API_BASE}/sprint/start`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: data.name || null,
+      goal: data.goal || null,
+      start_date: data.start_date || null,
+      end_date: data.end_date || null,
+      duration_days: data.duration_days ?? 14,
+    }),
+  });
+  if (!res.ok) throw new Error("Sprint start failed");
+  return res.json();
+}
+
+export async function endSprint() {
+  const res = await fetch(`${API_BASE}/sprint/end`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) throw new Error("Sprint end failed");
+  return res.json();
+}
+
 // Sprint Planning (doğal dil ile backlog yönetimi)
 export async function sprintPlan(request: string): Promise<{
   operation?: string;

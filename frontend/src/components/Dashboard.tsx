@@ -187,6 +187,11 @@ export function Dashboard({ onNavigateToResources }: { onNavigateToResources?: (
           <h3 className="text-sm font-semibold text-zinc-100 font-mono">
             {sprint.name}
           </h3>
+          {(sprint as { goal?: string }).goal && (
+            <p className="text-xs text-zinc-400 mt-1 line-clamp-2" title={(sprint as { goal?: string }).goal}>
+              {(sprint as { goal?: string }).goal}
+            </p>
+          )}
           <p className="text-xs text-zinc-500 mt-1">
             {sprint.days_remaining} gün kaldı
           </p>

@@ -255,6 +255,47 @@ def scrum_dashboard():
 
 
 # ---------------------------------------------------------------------------
+# Sprint yaşam döngüsü (başlat / bitir)
+# ---------------------------------------------------------------------------
+
+from .services.sprint_state import get_sprint_state, start_sprint, end_sprint
+
+
+@app.get("/sprint/state")
+def sprint_state():
+    """Aktif sprint durumunu döner."""
+    return get_sprint_state()
+
+
+class SprintStartRequest(BaseModel):
+    name: str | None = None
+    goal: str | None = None
+    start_date: str | None = None
+    end_date: str | None = None
+    duration_days: int = 14
+
+
+@app.post("/sprint/start")
+def sprint_start(req: SprintStartRequest | None = None):
+    """Yeni sprint başlatır."""
+    if req is None:
+        req = SprintStartRequest()
+    return start_sprint(
+        name=req.name,
+        goal=req.goal,
+        start_date=req.start_date,
+        end_date=req.end_date,
+        duration_days=req.duration_days,
+    )
+
+
+@app.post("/sprint/end")
+def sprint_end():
+    """Aktif sprinti bitirir."""
+    return end_sprint()
+
+
+# ---------------------------------------------------------------------------
 # Verimlilik için ek CRUD / Agent endpoint'leri
 # ---------------------------------------------------------------------------
 
@@ -350,6 +391,7 @@ class ToolCreate(BaseModel):
     category: str
     location: str
     calibration_due: str
+    status: str = "available"
 
 
 class ToolUpdate(BaseModel):
@@ -357,6 +399,7 @@ class ToolUpdate(BaseModel):
     category: str | None = None
     location: str | None = None
     calibration_due: str | None = None
+    status: str | None = None
 
 
 @app.get("/resources/tools/{id}")
@@ -473,9 +516,42 @@ def create_work_package_endpoint(req: WorkPackageCreate):
 @app.put("/work-packages/{id}")
 def update_work_package_endpoint(id: str, req: WorkPackageUpdate):
     data = {k: v for k, v in req.model_dump().items() if v is not None}
+
+    # Önce mevcut durumu oku (status değişimini tespit etmek için)
+    before = crud.get_work_package(id)
     w = crud.update_work_package(id, data)
     if not w:
         raise HTTPException(status_code=404, detail="Not found")
+
+    # Eğer status approved'a geçtiyse, otomatik olarak completed kaydı ekle
+    try:
+        prev_status = (before or {}).get("status")
+        new_status = w.get("status")
+        if prev_status != "approved" and new_status == "approved":
+            # Demo için: tamamlanma anı = şimdi, başlama = şimdi - 1 gün
+            from datetime import datetime, timedelta
+
+            now = datetime.utcnow()
+            started_at = now - timedelta(days=1)
+
+            cp = CompletedWorkPackage(
+                id=f"CP-{id}",
+                work_package_id=id,
+                sprint_id=None,
+                started_at=started_at.isoformat(),
+                completed_at=now.isoformat(),
+                first_pass_success=True,
+                rework_count=0,
+                planned_minutes=None,
+                actual_minutes=None,
+                assigned_personnel_count=None,
+                criticality=None,
+            )
+            add_completed(cp)
+    except Exception:
+        # KPI'lar için otomatik kayıt başarısız olsa bile ana update çalışmaya devam etsin.
+        pass
+
     return w
 
 
