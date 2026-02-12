@@ -8,13 +8,16 @@ tamamen kaldırıldı.  Yerine saf ChatOpenAI + class-based orchestration kullan
 from pathlib import Path
 import json
 import time
+import os
 
 from langchain_openai import ChatOpenAI
+from openai import OpenAI
 
 from .config import settings
 from .setup import get_aviation_glossary_tool
 from .sprint import BacklogItem, add_items, find_item_by_title, list_items, update_item_status
 from .analytics import list_completed, compute_efficiency_summary
+from .chunk_index import ChunkRecord, load_chunk_index
 
 
 # ---------------------------------------------------------------------------
@@ -38,16 +41,161 @@ class SearchRAGAgent:
       - Aviation glossary (Skybrary benzeri)
     """
 
-    def __init__(self, retriever, web_search_tool=None):
+    def __init__(self, retriever, web_search_tool=None, chunks: list[ChunkRecord] | None = None):
         self.llm = _default_llm()
         self.retriever = retriever
         self.web_search_tool = web_search_tool
         self.glossary_tool = get_aviation_glossary_tool()
+        # LLM-özetli chunk index (embedding'siz RAG)
+        self.chunks: list[ChunkRecord] = chunks or []
+        # OpenAI file_search (managed vector store) entegrasyonu
+        api_key = settings.OPENAI_API_KEY or os.getenv("OPENAI_API_KEY")
+        self._oa_client = OpenAI(api_key=api_key) if api_key else None
+        self._vector_store_id = os.getenv("OPENAI_VECTOR_STORE_ID")
+
+    def _openai_file_search_context(self, query: str) -> str:
+        """OpenAI Vector Store üzerinden file_search bağlamı çeker."""
+        if not self._oa_client or not self._vector_store_id:
+            return ""
+
+        tools = [
+            {
+                "type": "file_search",
+                "file_search": {
+                    "vector_store_ids": [self._vector_store_id],
+                },
+            }
+        ]
+
+        resp = self._oa_client.chat.completions.create(
+            model=settings.LLM_MODEL,
+            messages=[{"role": "user", "content": query}],
+            tools=tools,
+            tool_choice={"type": "file_search"},
+            extra_headers={"OpenAI-Beta": "assistants=v2"},
+        )
+        msg = resp.choices[0].message
+        return msg.content or ""
 
     def run(self, query: str) -> str:
+        # 0) OpenAI file_search bağlamı (varsa)
+        fs_context = ""
+        try:
+            fs_context = self._openai_file_search_context(query)
+        except Exception:
+            fs_context = ""
+
         # 1) RAG – FAA/AMT dokümanları
+        # Öncelik: hibrit yaklaşım (embedding + chunk index), sonra fallback'ler
         rag_context = ""
-        if self.retriever:
+
+        if self.chunks and self.retriever:
+            # 0) Embedding ile kaba aday seç (Chroma retriever)
+            docs = self.retriever.invoke(query)
+            candidate_ids = {d.metadata.get("id") for d in docs if d.metadata.get("id")}
+            candidate_chunks = [c for c in self.chunks if c.id in candidate_ids] or self.chunks
+
+            # a) Basit keyword skoru ile bu adaylar arasında sıralama
+            lower_q = query.lower()
+            tokens = [t for t in lower_q.replace(",", " ").split() if len(t) > 3]
+
+            def _score(rec: ChunkRecord) -> int:
+                txt = rec.summary.lower()
+                return sum(txt.count(t) for t in tokens) or 0
+
+            scored = sorted(candidate_chunks, key=_score, reverse=True)
+            top_candidates = scored[:40]  # LLM'e göstereceğimiz özetler
+
+            # b) LLM'den en alakalı chunk id'lerini seçmesini iste
+            from pydantic import BaseModel
+            import json as _json
+
+            class ChunkSelection(BaseModel):
+                chunk_ids: list[str]
+
+            summaries = [{"id": c.id, "summary": c.summary} for c in top_candidates]
+
+            selection_prompt = (
+                "Kullanıcının sorusuna en iyi cevap verebilecek chunk özetlerini seç.\n"
+                "Sadece aşağıdaki JSON formatında dön:\n"
+                '{ "chunk_ids": ["chunk-00001", \"...\"] }\n\n'
+                "Chunk özetleri:\n"
+                f"{_json.dumps(summaries, ensure_ascii=False, indent=2)}\n"
+                f"SORU: {query}"
+            )
+
+            sel_resp = self.llm.invoke(
+                [
+                    {
+                        "role": "system",
+                        "content": "Sadece geçerli JSON döndür.",
+                    },
+                    {"role": "user", "content": selection_prompt},
+                ]
+            )
+
+            try:
+                data = _json.loads(sel_resp.content)
+                selection = ChunkSelection.model_validate(data)
+                selected_ids = set(selection.chunk_ids)
+            except Exception:
+                # JSON parse başarısızsa, skorlanmış ilk 5 chunk'ı kullan
+                selected_ids = {c.id for c in top_candidates[:5]}
+
+            selected_texts = [c.text for c in self.chunks if c.id in selected_ids]
+            rag_context = "\n\n".join(selected_texts)
+
+        elif self.chunks:
+            # Sadece chunk index varsa: pure LLM summary-based seçim
+            lower_q = query.lower()
+            tokens = [t for t in lower_q.replace(",", " ").split() if len(t) > 3]
+
+            def _score(rec: ChunkRecord) -> int:
+                txt = rec.summary.lower()
+                return sum(txt.count(t) for t in tokens) or 0
+
+            scored = sorted(self.chunks, key=_score, reverse=True)
+            top_candidates = scored[:40]
+
+            from pydantic import BaseModel
+            import json as _json
+
+            class ChunkSelection(BaseModel):
+                chunk_ids: list[str]
+
+            summaries = [{"id": c.id, "summary": c.summary} for c in top_candidates]
+
+            selection_prompt = (
+                "Kullanıcının sorusuna en iyi cevap verebilecek chunk özetlerini seç.\n"
+                "Sadece aşağıdaki JSON formatında dön:\n"
+                '{ "chunk_ids": ["chunk-00001", \"...\"] }\n\n'
+                "Chunk özetleri:\n"
+                f"{_json.dumps(summaries, ensure_ascii=False, indent=2)}\n"
+                f"SORU: {query}"
+            )
+
+            sel_resp = self.llm.invoke(
+                [
+                    {
+                        "role": "system",
+                        "content": "Sadece geçerli JSON döndür.",
+                    },
+                    {"role": "user", "content": selection_prompt},
+                ]
+            )
+
+            try:
+                data = _json.loads(sel_resp.content)
+                selection = ChunkSelection.model_validate(data)
+                selected_ids = set(selection.chunk_ids)
+            except Exception:
+                selected_ids = {c.id for c in top_candidates[:5]}
+
+            selected_texts = [c.text for c in self.chunks if c.id in selected_ids]
+            rag_context = "\n\n".join(selected_texts)
+
+        elif self.retriever:
+            # Eski embedding-only RAG fallback
             docs = self.retriever.invoke(query)
             rag_context = "\n\n".join(d.page_content for d in docs[:5])
 
@@ -76,10 +224,11 @@ class SearchRAGAgent:
 
         user_prompt = (
             f"SORU / ARIZA: {query}\n\n"
-            f"--- FAA/AMT DOKÜMANLARI ---\n{rag_context or '(veri yok)'}\n\n"
+            f"--- OpenAI File Search (Vector Store) ---\n{fs_context or '(veri yok)'}\n\n"
+            f"--- FAA/AMT CHUNK'LARI (Yerel RAG) ---\n{rag_context or '(veri yok)'}\n\n"
             f"--- WEB ARAMA SONUÇLARI ---\n{web_context or '(veri yok)'}\n\n"
             f"--- HAVACILIK SÖZLÜĞÜ ---\n{glossary_context or '(veri yok)'}\n\n"
-            "Yukarıdaki kaynakları sentezleyerek teknik analiz yap."
+            "Yukarıdaki tüm kaynakları sentezleyerek teknik analiz yap."
         )
 
         response = self.llm.invoke([
@@ -489,48 +638,34 @@ class SprintPlanningAgent:
 
     def _plan_to_operations(self, request: str) -> dict:
         """
-        Kullanıcı isteğini aşağıdaki JSON formatına map eder:
-
-        {
-          "operation": "create_items" | "list_items" | "update_status",
-          "items": [
-            {
-              "type": "product" | "sprint",
-              "title": "string",
-              "description": "string",
-              "sprint": "string | null",
-              "priority": 1,
-              "estimate_hours": 4,
-              "owner": "string"
-            }
-          ],
-          "filters": {
-            "type": "product" | "sprint" | null,
-            "sprint": "string | null",
-            "status": "todo" | "in_progress" | "done" | null
-          },
-          "update": {
-            "item_id": "string | null",
-            "item_title": "string | null",
-            "status": "todo" | "in_progress" | "done"
-          }
-        }
+        Kullanıcı isteğini aşağıdaki JSON formatına map eder.
+        LLM mevcut item listesini görür; böylece doğru item_id seçebilir.
         """
+        from app.db import crud
+        wps = crud.list_work_packages()
+        wp_to_backlog = {"pending": "todo", "in_progress": "in_progress", "approved": "done"}
+        items_context = "\n".join(
+            f"  - id: {r['id']}, title: {r['title']}, status: {wp_to_backlog.get(r['status'], r['status'])}"
+            for r in wps
+        ) or "  (Henüz item yok)"
+
         system_prompt = (
-            "Sen bir Sprint Planning yardımcı ajanısın. "
-            "Kullanıcı isteğini sadece JSON operasyonuna çevirirsin. "
-            "JSON DIŞINDA HİÇBİR ŞEY yazma."
+            "Sen bir Sprint Planning yardımcı ajanısın. Kullanıcı isteğini SADECE tek bir JSON objesine çevirirsin. "
+            "JSON DIŞINDA HİÇBİR ŞEY yazma. Cevabın doğrudan { ile başlamalı."
         )
         user_prompt = (
+            "Mevcut backlog item'ları (bunlardan birine referans verildiğinde id'sini kullan):\n"
+            f"{items_context}\n\n"
             "Kullanıcı isteği:\n"
             f"{request}\n\n"
-            "Yapabileceğin operasyonlar:\n"
-            '1) "create_items": Yeni backlog item\'ları oluştur.\n'
-            '2) "list_items": Mevcut backlog\'u filtreleyerek listele.\n'
-            '3) "update_status": Belirli bir item\'in durumunu güncelle. '
-            "item_id yoksa item_title kullan (başlık/başlık parçası). "
-            "status: beklemede/pending/todo -> todo, devam ediyor/in progress -> in_progress, tamamlandı/done -> done.\n\n"
-            "Yukarıdaki JSON şemasına sadık kal ve yalnızca bir operasyon dön."
+            "Operasyonlar:\n"
+            '1) "create_items": Yeni item ekle. "items" dizisi doldur.\n'
+            '2) "list_items": Listele. "filters" kullan.\n'
+            '3) "update_status": Bir item\'ın durumunu güncelle. '
+            'Yukarıdaki listeden eşleşen item\'ın id\'sini "update.item_id" olarak yaz. '
+            '"update.status" zorunlu: todo | in_progress | done. '
+            '(Türkçe: beklemede->todo, devam ediyor->in_progress, tamamlandı->done)\n\n'
+            "Yalnızca geçerli bir JSON dön. Örnek update_status: {\"operation\":\"update_status\",\"update\":{\"item_id\":\"xxx\",\"status\":\"in_progress\"}}"
         )
         resp = self.llm.invoke(
             [
@@ -538,12 +673,17 @@ class SprintPlanningAgent:
                 {"role": "user", "content": user_prompt},
             ]
         )
-        import json  # local import to avoid confusion
+        import json
+        import re
 
+        raw = (resp.content or "").strip()
+        # Markdown code block temizle
+        m = re.search(r"```(?:json)?\s*([\s\S]*?)```", raw)
+        if m:
+            raw = m.group(1).strip()
         try:
-            ops = json.loads(resp.content)
-        except Exception:
-            # En kötü ihtimalle list_items fallback'i
+            ops = json.loads(raw)
+        except json.JSONDecodeError:
             ops = {"operation": "list_items", "filters": {}}
         return ops
 

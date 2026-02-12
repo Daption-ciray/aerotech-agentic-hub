@@ -64,6 +64,16 @@ export async function fetchEfficiencyMetrics() {
   return res.json();
 }
 
+/** LLM tabanlı verimlilik analizi + öneriler (backend /analytics/efficiency) */
+export async function fetchAnalyticsEfficiency(): Promise<{
+  summary?: string;
+  suggestions?: string[];
+}> {
+  const res = await fetch(`${API_BASE}/analytics/efficiency`);
+  if (!res.ok) throw new Error("Analytics efficiency fetch failed");
+  return res.json();
+}
+
 export async function fetchEfficiencyMonthly() {
   const res = await fetch(`${API_BASE}/efficiency/monthly`);
   if (!res.ok) throw new Error("Efficiency monthly fetch failed");

@@ -9,6 +9,9 @@ langchain-core
 langchain-text-splitters
 langchain-chroma
 
+# OpenAI client (file_search / vector store)
+openai>=1.16.0
+
 # PDF loading
 pypdf
 

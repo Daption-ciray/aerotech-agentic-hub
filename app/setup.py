@@ -2,16 +2,15 @@
 AeroTech Agentic Hub – Setup & tool factories.
 
 Retriever, web search tool, glossary tool ve resource tool burada oluşturuluyor.
+
+Not: RAG tarafını artık OpenAI file_search + agentik pipeline üstleniyor;
+lokal vektör store kullanmıyoruz, bu yüzden get_retriever() None döner.
 """
 
 from pathlib import Path
 from typing import List
 import json
 
-from langchain_openai import OpenAIEmbeddings
-from langchain_chroma import Chroma
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.tools import Tool
 
 from .config import settings
@@ -22,28 +21,12 @@ VECTOR_DIR = BASE_DIR / "vectorstore"
 
 
 # ---------------------------------------------------------------------------
-# RAG Retriever (FAA / AMT PDF'leri) – sadece hazır vektör store'dan okur
+# RAG Retriever – devre dışı (OpenAI file_search kullanıyoruz)
 # ---------------------------------------------------------------------------
 
 def get_retriever():
-    """
-    FAA/PHAK ve AMT handbook PDF'leri üzerinden RAG retriever.
-
-    NOT: Embedding işlemi runtime'da yapılmaz. Bunun yerine önce
-    `python -m app.build_embeddings` komutuyla vektör store oluşturulmalıdır.
-    """
-    if not VECTOR_DIR.exists():
-        raise FileNotFoundError(
-            f"Vektör store bulunamadı: {VECTOR_DIR}. "
-            "Lütfen önce `python -m app.build_embeddings` komutuyla embedding oluştur."
-        )
-
-    embeddings = OpenAIEmbeddings(openai_api_key=settings.OPENAI_API_KEY)
-    vectorstore = Chroma(
-        embedding_function=embeddings,
-        persist_directory=str(VECTOR_DIR),
-    )
-    return vectorstore.as_retriever()
+    """Artık lokal retriever kullanılmıyor; OpenAI file_search devrede."""
+    return None
 
 
 # ---------------------------------------------------------------------------

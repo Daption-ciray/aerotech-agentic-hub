@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { BarChart3, TrendingUp, Clock, Target, Loader2 } from "lucide-react";
-import { fetchEfficiencyMetrics, fetchEfficiencyMonthly } from "@/lib/api";
+import { fetchEfficiencyMetrics, fetchEfficiencyMonthly, fetchAnalyticsEfficiency } from "@/lib/api";
 
 const METRIC_LABELS: Record<string, string> = {
   avg_completion_days: "Ortalama Tamamlanma Süresi",
@@ -26,6 +26,7 @@ const TARGET_KEYS: Record<string, string> = {
 export function EfficiencyAnalysisPage() {
   const [metrics, setMetrics] = useState<Record<string, number> | null>(null);
   const [monthly, setMonthly] = useState<{ month: string; completed: number; planned: number }[]>([]);
+  const [analytics, setAnalytics] = useState<{ summary?: string; suggestions?: string[] } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,10 +36,15 @@ export function EfficiencyAnalysisPage() {
       try {
         setLoading(true);
         setError(null);
-        const [m, mon] = await Promise.all([fetchEfficiencyMetrics(), fetchEfficiencyMonthly()]);
+        const [m, mon, ana] = await Promise.all([
+          fetchEfficiencyMetrics(),
+          fetchEfficiencyMonthly(),
+          fetchAnalyticsEfficiency().catch(() => null),
+        ]);
         if (!cancelled) {
           setMetrics(m as Record<string, number>);
           setMonthly(mon);
+          setAnalytics(ana ?? null);
         }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : "Veri yüklenemedi");
@@ -145,15 +151,22 @@ export function EfficiencyAnalysisPage() {
             <TrendingUp className="w-4 h-4 text-emerald-400" />
             <h3 className="text-sm font-semibold text-zinc-100">Önerilen İyileştirmeler</h3>
           </div>
+          {analytics?.summary && (
+            <p className="text-sm text-zinc-300 mb-3">{analytics.summary}</p>
+          )}
           <ul className="space-y-2 text-sm text-zinc-400">
-            <li className="flex items-start gap-2">
-              <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-              <span>Ortalama tamamlanma süresini hedefe (4.0 gün) çekmek için elevator/aileron iş paketlerinde paralel atama önerilir.</span>
-            </li>
-            <li className="flex items-start gap-2">
-              <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
-              <span>Parça stok seviyeleri (özellikle hydraulic actuator) tedarik süresini uzatıyor. Kritik parçalar için güvenlik stoğu artırılmalı.</span>
-            </li>
+            {(analytics?.suggestions && analytics.suggestions.length > 0
+              ? analytics.suggestions
+              : [
+                  "Ortalama tamamlanma süresini hedefe çekmek için elevator/aileron iş paketlerinde paralel atama önerilir.",
+                  "Parça stok seviyeleri tedarik süresini uzatıyor. Kritik parçalar için güvenlik stoğu artırılmalı.",
+                ]
+            ).map((text, i) => (
+              <li key={i} className="flex items-start gap-2">
+                <Clock className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+                <span>{text}</span>
+              </li>
+            ))}
           </ul>
         </div>
       </div>
