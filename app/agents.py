@@ -17,6 +17,7 @@ from .config import settings
 from .setup import get_aviation_glossary_tool
 from .sprint import BacklogItem, add_items, find_item_by_title, list_items, update_item_status
 from .analytics import list_completed, compute_efficiency_summary
+from .services.data import get_efficiency_metrics, get_work_packages
 from .chunk_index import ChunkRecord, load_chunk_index
 
 
@@ -789,16 +790,34 @@ class EfficiencyAgent:
     def run(self) -> dict:
         metrics = compute_efficiency_summary()
         completed = list_completed()
+        # completed_work_packages boşsa work_packages tablosundan veri kullan
+        wp_list = get_work_packages()
+        fallback_metrics = get_efficiency_metrics()
+        approved = sum(1 for p in wp_list if p.get("status") == "approved")
+        in_progress = sum(1 for p in wp_list if p.get("status") == "in_progress")
+        total_wp = len(wp_list) or 1
 
-        system_prompt = (
-            "Sen uçak bakım operasyonlarında verimlilik odaklı bir YBS uzmanısın. "
-            "Aşağıdaki metrikleri ve tamamlanan iş paketlerinin özetini kullanarak "
-            "yönetim için kısa bir analiz ve öneri üretirsin."
-        )
+        if not metrics.get("total_completed") and not completed:
+            metrics = {
+                "total_completed": approved,
+                "total_work_packages": len(wp_list),
+                "approved_count": approved,
+                "in_progress_count": in_progress,
+                "first_pass_rate": round((approved / total_wp) * 100, 1) if total_wp else 0,
+                "avg_completion_days": fallback_metrics.get("avg_completion_days"),
+                "throughput_per_day": fallback_metrics.get("tasks_per_hour"),
+                "monthly_completed": [],
+                "kaynak": "work_packages (SQLite) – completed_work_packages henüz dolu değil",
+            }
+        else:
+            metrics["approved_count"] = approved
+            metrics["total_work_packages"] = len(wp_list)
+            metrics["in_progress_count"] = in_progress
 
-        # İş paketlerini çok şişirmemek için sadece sayıları ve kritik alanları özetleyelim
         wp_summary = {
             "total_completed": metrics.get("total_completed", 0),
+            "approved_in_work_packages": approved,
+            "in_progress": in_progress,
             "samples": [
                 {
                     "id": i.id,
@@ -810,6 +829,11 @@ class EfficiencyAgent:
                 for i in completed[:10]
             ],
         }
+        if not wp_summary["samples"] and wp_list:
+            wp_summary["work_packages_ornek"] = [
+                {"id": p.get("id"), "title": p.get("title"), "status": p.get("status")}
+                for p in wp_list[:10]
+            ]
 
         import json as _json
         user_prompt = (

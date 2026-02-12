@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircle, Clock, AlertTriangle, Loader2, Plus, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fetchWorkPackages, createWorkPackage, updateWorkPackage, deleteWorkPackage } from "@/lib/api";
+import { fetchWorkPackages, createWorkPackage, updateWorkPackage, deleteWorkPackage, fetchPersonnel } from "@/lib/api";
 import { CrudModal } from "@/components/CrudModal";
 import { notifyDataUpdated } from "@/lib/events";
 
@@ -168,6 +168,15 @@ function WorkPackageModal({
   const [assigned_to, setAssignedTo] = useState(editing && editing.assigned_to ? String(editing.assigned_to) : "");
   const [due_date, setDueDate] = useState(editing ? String(editing.due_date) : "2026-02-20");
   const [saving, setSaving] = useState(false);
+  const [personnel, setPersonnel] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPersonnel().then((list) => {
+      if (!cancelled) setPersonnel(list);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -223,7 +232,16 @@ function WorkPackageModal({
         </div>
         <div>
           <label className="block text-xs text-zinc-500 mb-1">Sorumlu</label>
-          <input value={assigned_to} onChange={(e) => setAssignedTo(e.target.value)} className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-zinc-100" placeholder="İsim veya boş" />
+          <select
+            value={assigned_to}
+            onChange={(e) => setAssignedTo(e.target.value)}
+            className="w-full rounded border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-zinc-100"
+          >
+            <option value="">— Seçin veya boş bırakın —</option>
+            {personnel.map((p) => (
+              <option key={p.id} value={p.name}>{p.name} ({p.id})</option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-xs text-zinc-500 mb-1">Termin Tarihi</label>

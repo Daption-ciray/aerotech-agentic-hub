@@ -41,7 +41,7 @@ function StatusBadge({
   );
 }
 
-export function Dashboard() {
+export function Dashboard({ onNavigateToResources }: { onNavigateToResources?: () => void }) {
   const [data, setData] = useState<{
     sprint?: { name: string; status: string; days_remaining: number; completed: number; total: number; velocity: number; target: number };
     resource_util?: { label: string; value: number; status: string }[];
@@ -232,12 +232,26 @@ export function Dashboard() {
         </div>
 
         {/* Resource Utilization */}
-        <div className="rounded-lg border border-slate-700 bg-slate-900/50 p-4">
-          <div className="flex items-center gap-2 mb-3">
-            <Users className="w-4 h-4 text-amber-400" />
-            <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">
-              Kaynak Kullanımı
-            </span>
+        <div
+          role={onNavigateToResources ? "button" : undefined}
+          onClick={onNavigateToResources}
+          tabIndex={onNavigateToResources ? 0 : undefined}
+          onKeyDown={onNavigateToResources ? (e) => e.key === "Enter" && onNavigateToResources() : undefined}
+          className={cn(
+            "rounded-lg border border-slate-700 bg-slate-900/50 p-4",
+            onNavigateToResources && "cursor-pointer hover:border-slate-600 hover:bg-slate-800/50 transition-colors"
+          )}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Users className="w-4 h-4 text-amber-400" />
+              <span className="text-xs font-mono text-zinc-500 uppercase tracking-wider">
+                Kaynak Kullanımı
+              </span>
+            </div>
+            {onNavigateToResources && (
+              <span className="text-[10px] text-zinc-500">Yönet →</span>
+            )}
           </div>
           <div className="space-y-3">
             {resourceUtil.map((item, i) => (

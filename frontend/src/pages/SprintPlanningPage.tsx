@@ -1,15 +1,8 @@
 import { useEffect, useState } from "react";
-import { Loader2, LayoutList, User, Calendar, ArrowRight, Send, MessageSquare } from "lucide-react";
+import { Loader2, LayoutList, User, Calendar, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { fetchWorkPackages, updateWorkPackage, sprintPlan } from "@/lib/api";
+import { fetchWorkPackages, updateWorkPackage } from "@/lib/api";
 import { notifyDataUpdated, DATA_UPDATED } from "@/lib/events";
-
-const EXAMPLE_COMMANDS = [
-  "Tüm backlog öğelerini listele",
-  "Yeni item ekle: A320 elevator trim kontrolü",
-  "Todo durumundaki işleri göster",
-  "Aileron hinge bracket controlünü devam ediyora al",
-];
 
 type WpStatus = "pending" | "in_progress" | "approved";
 type Wp = { id: string; title: string; aircraft?: string; ata?: string; status: string; assigned_to?: string | null; due_date?: string };
@@ -26,9 +19,6 @@ export function SprintPlanningPage() {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<WpStatus | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
-  const [nlpInput, setNlpInput] = useState("");
-  const [nlpLoading, setNlpLoading] = useState(false);
-  const [nlpResult, setNlpResult] = useState<Record<string, unknown> | null>(null);
 
   const load = async () => {
     try {
@@ -58,25 +48,6 @@ export function SprintPlanningPage() {
       // ignore
     } finally {
       setUpdating(null);
-    }
-  };
-
-  const handleNlpSubmit = async () => {
-    const q = nlpInput.trim();
-    if (!q || nlpLoading) return;
-    setNlpLoading(true);
-    setNlpResult(null);
-    try {
-      const res = await sprintPlan(q);
-      setNlpResult(res);
-      await load();
-      if (res.operation === "create_items" || res.operation === "update_status") {
-        notifyDataUpdated();
-      }
-    } catch {
-      setNlpResult({ error: "İstek başarısız" });
-    } finally {
-      setNlpLoading(false);
     }
   };
 
@@ -121,88 +92,8 @@ export function SprintPlanningPage() {
           <h2 className="text-lg font-semibold text-zinc-100">Sprint Planlama</h2>
         </div>
         <p className="text-sm text-zinc-500 mt-0.5">
-          Doğal dil ile backlog yönetimi – listeleme, yeni öğe ekleme, durum güncelleme
+          Jira/Trello tarzı Kanban – kartları sürükleyerek veya Önceki/Sonraki ile durum güncelleyin
         </p>
-      </div>
-
-      {/* Komut Gir + Örnek Komutlar */}
-      <div className="flex-shrink-0 px-6 py-4 border-b border-slate-800 space-y-4">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="w-4 h-4 text-thy-red" />
-          <span className="text-sm font-medium text-zinc-300">Komut Gir</span>
-        </div>
-        <div className="flex gap-2">
-          <input
-            value={nlpInput}
-            onChange={(e) => setNlpInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleNlpSubmit()}
-            placeholder="Örn: Tüm backlog öğelerini listele, Yeni item ekle: Elevator tamiri..."
-            className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-thy-red/50"
-            disabled={nlpLoading}
-          />
-          <button
-            onClick={handleNlpSubmit}
-            disabled={nlpLoading || !nlpInput.trim()}
-            className="rounded-lg bg-thy-red px-4 py-3 text-sm font-semibold text-white hover:bg-thy-red/90 disabled:opacity-50 flex items-center gap-2"
-          >
-            {nlpLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-            Gönder
-          </button>
-        </div>
-        <div>
-          <p className="text-xs text-zinc-500 mb-2">Örnek Komutlar</p>
-          <div className="flex flex-wrap gap-2">
-            {EXAMPLE_COMMANDS.map((cmd) => (
-              <button
-                key={cmd}
-                onClick={() => { setNlpInput(cmd); }}
-                className="rounded border border-slate-600 bg-slate-800/80 px-3 py-1.5 text-xs text-zinc-300 hover:bg-slate-700 hover:border-slate-500 transition-colors"
-              >
-                {cmd}
-              </button>
-            ))}
-          </div>
-        </div>
-        {nlpResult && (
-          <div className="rounded-lg border border-slate-700 bg-slate-800/50 p-3 text-sm">
-            {nlpResult.error ? (
-              <p className="text-amber-400">{String(nlpResult.error)}</p>
-            ) : null}
-            {nlpResult.operation === "create_items" && (
-              <p className="text-emerald-400">
-                {Array.isArray(nlpResult.created) ? nlpResult.created.length : 0} öğe eklendi. Backlog: {String(nlpResult.backlog_size ?? 0)}
-              </p>
-            )}
-            {nlpResult.operation === "update_status" && nlpResult.item && (
-              <p className="text-emerald-400">
-                Durum güncellendi: {String((nlpResult.item as Record<string, unknown>).title ?? "")}
-              </p>
-            )}
-            {nlpResult.operation === "list_items" && Array.isArray(nlpResult.items) && (nlpResult.items as unknown[]).length > 0 && (
-              <div className="space-y-1 max-h-40 overflow-y-auto">
-                {(nlpResult.items as Array<{ id: string; title: string; status: string }>).map((i) => (
-                  <div key={i.id} className="flex justify-between gap-2 text-zinc-300">
-                    <span className="truncate">{i.title}</span>
-                    <span className={cn(
-                      "flex-shrink-0",
-                      i.status === "done" ? "text-emerald-400" : i.status === "in_progress" ? "text-amber-400" : "text-zinc-500"
-                    )}>
-                      {i.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {nlpResult.operation === "list_items" && (!Array.isArray(nlpResult.items) || (nlpResult.items as unknown[]).length === 0) && (
-              <p className="text-zinc-500">Öğe bulunamadı.</p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Kanban Board */}
-      <div className="flex-shrink-0 px-4 py-2 border-b border-slate-800">
-        <p className="text-xs text-zinc-500">Jira/Trello tarzı Kanban – kartları sürükleyerek durum güncelleyin</p>
       </div>
 
       <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">

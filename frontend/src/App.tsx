@@ -26,7 +26,7 @@ export default function App() {
       <Sidebar activeTab={activeTab} onTabChange={setActiveTab} />
       <main className="flex-1 flex min-w-0 border-r border-slate-800">
         <PageComponent />
-        <Dashboard />
+        <Dashboard onNavigateToResources={() => setActiveTab("resources")} />
       </main>
     </div>
   );
