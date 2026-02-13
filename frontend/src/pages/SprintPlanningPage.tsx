@@ -185,7 +185,7 @@ export function SprintPlanningPage() {
         />
       )}
 
-      <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">
+      <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden p-6">
         <div className="flex gap-4 h-full min-w-max">
           {COLUMNS.map((col) => {
             const items = getItemsByStatus(col.id);
@@ -197,19 +197,19 @@ export function SprintPlanningPage() {
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, col.id)}
                 className={cn(
-                  "w-72 flex-shrink-0 flex flex-col rounded-lg border-2 transition-colors",
+                  "w-72 flex-shrink-0 flex flex-col rounded-lg border-2 transition-colors min-h-0",
                   isDropTarget
                     ? "border-thy-red bg-thy-red/10"
                     : "border-slate-200 bg-slate-50"
                 )}
               >
-                <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+                <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between flex-shrink-0">
                   <h3 className="text-sm font-semibold text-zinc-800">{col.label}</h3>
                   <span className="text-xs font-mono text-zinc-500 bg-slate-100 px-2 py-0.5 rounded">
                     {items.length}
                   </span>
                 </div>
-                <div className="flex-1 p-3 space-y-2 overflow-y-auto scrollbar-thin min-h-[200px]">
+                <div className="flex-1 min-h-0 p-3 space-y-2 overflow-y-auto scrollbar-thin">
                   {items.map((item) => (
                     <Card
                       key={item.id}

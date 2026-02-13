@@ -107,7 +107,7 @@ export function Dashboard({ onNavigateToResources }: { onNavigateToResources?: (
     <aside className="w-80 flex-shrink-0 border-l border-slate-200 bg-white flex flex-col overflow-hidden">
       <div className="p-4 border-b border-slate-200">
         <h2 className="text-sm font-semibold text-zinc-800">
-          Scrum Dashboard
+          Operasyonel Özet
         </h2>
         <p className="text-xs text-zinc-500 mt-0.5">
           Operasyonel İstihbarat & Karar Destek
